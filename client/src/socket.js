@@ -1,8 +1,9 @@
-import { io } from "socket.io-client";
+import socketIOClient from "socket.io-client";
 
-const URL = "http://localhost:8000";
-const socket = io(URL, {
-  autoConnect: true,
-});
+const SERVER_URL = "http://localhost:8000";
 
-export default socket;
+const createConnection = () => {
+  return socketIOClient.connect(SERVER_URL);
+};
+
+export default createConnection;

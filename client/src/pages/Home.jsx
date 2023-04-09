@@ -1,38 +1,21 @@
 import React, { useEffect, useState } from "react";
-import ConnectionState from "../components/ConnectionState";
-import ConnectionManager from "../components/ConnectionManager";
 import ChatForm from "../components/ChatForm";
+import Auth from "./Auth";
+import { Navigate } from "react-router-dom";
 
 function Home() {
-  // const [connected, setConnected] = useState(false);
-
-  // useEffect(() => {
-  //   // some auth process here before connected.
-  //   setConnected(true);
-  //   socket.connect();
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, []);
-  // const handleConnect = () => {
-  //   setConnected(true);
-  //   socket.connect();
-  // };
-  // const handleDisconnect = () => {
-  //   setConnected(false);
-  //   socket.disconnect();
-  // };
-  return (
-    <div className="flex flex-col gap-8 justify-start items-center">
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      {/* <ConnectionState connected={connected}></ConnectionState>
-      <ConnectionManager
-        handleConnect={handleConnect}
-        handleDisconnect={handleDisconnect}
-      ></ConnectionManager> */}
-      <ChatForm></ChatForm>
-    </div>
-  );
+  const [isAuth, setIsAuth] = useState(false);
+  const [user, setUser] = useState("");
+  if (!isAuth) {
+    return <Auth setIsAuth={setIsAuth} setUser={setUser}></Auth>;
+  } else {
+    return (
+      <div className="flex flex-col gap-8 justify-start items-center w-2/3 shadow-2xl m-auto border-2 rounded-2xl mt-8 py-8 px-[5%]">
+        <h1 className="text-3xl font-bold underline italic">Hello world!</h1>
+        <ChatForm user={user}></ChatForm>
+      </div>
+    );
+  }
 }
 
 export default Home;
