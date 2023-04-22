@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
+import { UserContext } from "../context/UserContext";
+import { getUserById } from "../api";
 
-function MessageLine({ username, message, self }) {
+function MessageLine({ fromId, message, fromUsername }) {
+  const [user] = useContext(UserContext);
+  const self = user._id === fromId;
+
   return (
     <div className={`w-full rounded-xl  ${self ? " flex justify-end" : ""}`}>
       <div
@@ -8,7 +13,7 @@ function MessageLine({ username, message, self }) {
           self ? "text-right bg-cyan-300" : "bg-gray-200"
         }`}
       >
-        <label className="font-semibold">{username}</label>
+        <label className="font-semibold">{self ? "You" : fromUsername}</label>
         <p className="break-words">{message}</p>
       </div>
     </div>
