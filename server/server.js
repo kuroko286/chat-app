@@ -30,6 +30,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`A user has been left.`);
     userStore.removeUser(socket.id);
+    io.emit("getUsers", userStore.getAllUser());
   });
 });
 

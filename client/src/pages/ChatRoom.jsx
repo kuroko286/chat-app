@@ -1,44 +1,24 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ChatForm from "../components/ChatForm";
+import ChatContainer from "../components/ChatContainer";
 import { UserContext } from "../context/UserContext";
 import { useCookies } from "react-cookie";
 import { getAllFriend } from "../api";
 import socketIOClient from "socket.io-client";
 import { getAllMessage, sendMessage } from "../api";
+import FriendList from "../components/FriendList";
 
 function ChatRoom() {
   const navigate = useNavigate();
   const [user, setUser] = useContext(UserContext);
   const [friends, setFriends] = useState([]);
+  const [onlineFriends, setOnlineFriends] = useState([]);
   const [currentFriendId, setCurrentFriendId] = useState("");
   const [dialog, setDialog] = useState([]);
   const [message, setMessage] = useState("");
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
   const socketRef = useRef();
 
-  useEffect(() => {
-    socketRef.current = socketIOClient.connect("http://localhost:8000");
-    socketRef.current.emit("user-connected", user);
-    socketRef.current.on("getUsers", (users) => {
-      console.log(users);
-    });
-    socketRef.current.on("get-message", ({ text, fromUser, toUser }) => {
-      setDialog([
-        ...dialog,
-        {
-          fromId: fromUser.userId,
-          message: text,
-          fromUsername: fromUser.username,
-        },
-      ]);
-      console.log({ fromUser, text, toUser });
-    });
-
-    return () => {
-      socketRef.current.disconnect();
-    };
-  }, []);
   useEffect(() => {
     getAllFriend(user._id)
       .then((res) => {
@@ -48,22 +28,52 @@ function ChatRoom() {
       .catch((err) => console.log(err));
   }, []);
   useEffect(() => {
-    getAllMessage(user._id, currentFriendId)
-      .then((res) =>
-        res.data.map((mess) => {
-          return {
-            message: mess.text,
-            fromId: mess.from,
-            fromUsername: mess.fromUsername,
-          };
-        })
-      )
-      .then((res) => setDialog(res))
-      .catch((err) => console.log(err));
+    currentFriendId &&
+      getAllMessage(user._id, currentFriendId)
+        .then((res) =>
+          res.data.map((mess) => {
+            return {
+              message: mess.text,
+              fromId: mess.from,
+              fromUsername: mess.fromUsername,
+            };
+          })
+        )
+        .then((res) => setDialog(res))
+        .catch((err) => console.log(err));
   }, [currentFriendId]);
+  useEffect(() => {
+    socketRef.current = socketIOClient.connect("http://localhost:8000");
+    socketRef.current.emit("user-connected", user);
+    socketRef.current.on("getUsers", (users) => {
+      setOnlineFriends(
+        user.friends.filter((f) => users.some((u) => u.userId === f.id))
+      );
+    });
+
+    socketRef.current.on("get-message", ({ text, fromUser, toUser }) => {
+      if (currentFriendId === toUser.userId) {
+        setDialog((dialog) => [
+          ...dialog,
+          {
+            fromId: fromUser.userId,
+            message: text,
+            fromUsername: fromUser.username,
+          },
+        ]);
+      }
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, []);
 
   const handleChange = (event) => {
     setMessage(event.target.value);
+  };
+  const changeCurrentFriend = (id) => {
+    setCurrentFriendId(id);
   };
 
   const handleSubmit = (event) => {
@@ -105,21 +115,14 @@ function ChatRoom() {
           <div className="flex gap-4 w-full">
             <div>
               <h5>Current friends</h5>
-              <ul className="flex flex-col gap-2">
-                {friends.map((friend) => (
-                  <li>
-                    <button
-                      onClick={() => {
-                        setCurrentFriendId(friend.id);
-                      }}
-                    >
-                      {friend.username}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <FriendList
+                friends={friends}
+                onlineFriends={onlineFriends}
+                currentFriendId={currentFriendId}
+                changeFriend={changeCurrentFriend}
+              ></FriendList>
             </div>
-            <ChatForm dialog={dialog}></ChatForm>
+            <ChatContainer dialog={dialog}></ChatContainer>
           </div>
           <form
             onSubmit={handleSubmit}

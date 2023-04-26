@@ -9,18 +9,14 @@ class UserStore {
     return this.users.find((user) => user.userId === id);
   }
   saveUser(userId, username, socketId) {
-    const exist = this.users.some((user) => user.userId === userId);
-    if (!exist) {
-      this.users.push({
-        userId,
-        username,
-        socketId,
-      });
-    }
+    this.users.push({
+      userId,
+      username,
+      socketId,
+    });
   }
   removeUser(socketId) {
-    this.users.filter((user) => user.socketId !== socketId);
-    return;
+    this.users = this.users.filter((user) => user.socketId !== socketId);
   }
 }
 
