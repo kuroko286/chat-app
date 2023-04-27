@@ -25,11 +25,13 @@ io.on("connection", (socket) => {
   socket.on("send-message", ({ fromId, toId, text }) => {
     const toUser = userStore.getUserById(toId);
     const fromUser = userStore.getUserById(fromId);
-    socket.to(toId).emit("get-message", { text, fromUser, toUser });
+    console.log(fromId, toId);
+    socket.to(fromId).to(toId).emit("get-message", { text, fromUser, toUser });
   });
   socket.on("disconnect", () => {
     console.log(`A user has been left.`);
     userStore.removeUser(socket.id);
+    console.log(userStore.getAllUser().length);
     io.emit("getUsers", userStore.getAllUser());
   });
 });

@@ -1,20 +1,20 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import ChatContainer from "../components/ChatContainer";
-import { UserContext } from "../context/UserContext";
-import { useCookies } from "react-cookie";
+import { useContext, useEffect, useState } from "react";
 import { getAllFriend } from "../api";
-import socketIOClient from "socket.io-client";
-import { getAllMessage, sendMessage } from "../api";
-import FriendList from "../components/FriendList";
+import { UserContext } from "../context/UserContext";
 
 const useFriends = () => {
   const [user, setUser] = useContext(UserContext);
   const [friends, setFriends] = useState([]);
   useEffect(() => {
-    getAllFriend(user._id)
-      .then((res) => setFriends(res.data))
-      .catch((err) => console.log(err));
+    async function fetchFriends() {
+      try {
+        const res = await getAllFriend(user._id);
+        setFriends(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchFriends();
   }, []);
   return [friends, setFriends];
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext } from "react";
+import React, { useEffect, useState, createContext, useRef } from "react";
 import { getUserById, getUserIdByToken } from "../api";
 import { useCookies } from "react-cookie";
 export const UserContext = createContext();
@@ -8,6 +8,7 @@ export default function UserProvider({ children }) {
   const [ready, setReady] = useState(false);
   const [cookies, setCookie] = useCookies(["token"]);
   const token = cookies.token;
+
   useEffect(() => {
     async function fetchUser() {
       try {
