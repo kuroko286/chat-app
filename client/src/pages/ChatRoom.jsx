@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import ChatContainer from "../components/ChatContainer";
 import { UserContext } from "../context/UserContext";
 import { useCookies } from "react-cookie";
-import { getAllFriend } from "../api";
 import socketIOClient from "socket.io-client";
 import { getAllMessage, sendMessage } from "../api";
 import FriendList from "../components/FriendList";
@@ -11,21 +10,15 @@ import FriendList from "../components/FriendList";
 function ChatRoom() {
   const navigate = useNavigate();
   const [user, setUser] = useContext(UserContext);
-  const [friends, setFriends] = useState([]);
   const [onlineFriends, setOnlineFriends] = useState([]);
-  const [currentFriendId, setCurrentFriendId] = useState("");
+  const [currentFriendId, setCurrentFriendId] = useState(user.friends[0].id);
   const [dialog, setDialog] = useState([]);
   const [message, setMessage] = useState("");
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
   const socketRef = useRef();
 
   useEffect(() => {
-    getAllFriend(user._id)
-      .then((res) => {
-        setFriends(res.data);
-        setCurrentFriendId(res.data[0].id);
-      })
-      .catch((err) => console.log(err));
+    setCurrentFriendId(user.friends[0].id);
   }, []);
   useEffect(() => {
     currentFriendId &&
@@ -52,7 +45,7 @@ function ChatRoom() {
     });
 
     socketRef.current.on("get-message", ({ text, fromUser, toUser }) => {
-      if (currentFriendId === toUser.userId) {
+      if (currentFriendId === fromUser.userId) {
         setDialog((dialog) => [
           ...dialog,
           {
@@ -65,6 +58,8 @@ function ChatRoom() {
     });
 
     return () => {
+      socketRef.current.off("getUsers");
+      socketRef.current.off("get-message");
       socketRef.current.disconnect();
     };
   }, []);
@@ -108,7 +103,7 @@ function ChatRoom() {
       <h1 className="text-3xl font-bold underline italic">
         Hello {user?.username || "Guest"}!
       </h1>
-      {friends.length === 0 ? (
+      {user.friends.length === 0 ? (
         <h4>You have no friend @_@</h4>
       ) : (
         <>
@@ -116,7 +111,7 @@ function ChatRoom() {
             <div>
               <h5>Current friends</h5>
               <FriendList
-                friends={friends}
+                friends={user.friends}
                 onlineFriends={onlineFriends}
                 currentFriendId={currentFriendId}
                 changeFriend={changeCurrentFriend}

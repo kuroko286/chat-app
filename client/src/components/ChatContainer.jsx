@@ -1,33 +1,9 @@
 import React, { useRef, useState, useEffect, useContext } from "react";
 import MessageLine from "./MessageLine";
-import { getAllMessage, sendMessage } from "../api";
+import { v4 as uuidv4 } from "uuid";
 
 function ChatContainer({ dialog }) {
   const bottomRef = useRef();
-  const [message, setMessage] = useState("");
-  const [dialog, setDialog] = useState([]);
-
-  const handleChange = (event) => {
-    setMessage(event.target.value);
-  };
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setDialog([
-      ...dialog,
-      {
-        message: message,
-        fromId: user._id,
-        fromUsername: user.username,
-      },
-    ]);
-    sendMessage(user._id, currentFriendId, message);
-    setMessage("");
-    socketRef.current.emit("send-message", {
-      fromId: user._id,
-      toId: currentFriendId,
-      text: message,
-    });
-  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,7 +12,7 @@ function ChatContainer({ dialog }) {
   return (
     <ul className=" flex flex-col gap-6 w-full max-h-[450px] overflow-y-auto px-4 py-6 border-2 rounded-2xl">
       {dialog.map((item) => (
-        <li className="w-full">
+        <li className="w-full" key={uuidv4()}>
           <MessageLine
             fromId={item.fromId}
             message={item.message}

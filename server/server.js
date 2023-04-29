@@ -18,6 +18,7 @@ io.on("connection", (socket) => {
   socket.on("user-connected", (user) => {
     console.log(`${user.username} has been connected.`);
     userStore.saveUser(user._id, user.username, socket.id);
+    console.log("user connected: " + userStore.getAllUser().length);
     socket.join(user._id);
     io.emit("getUsers", userStore.getAllUser());
   });
@@ -25,11 +26,12 @@ io.on("connection", (socket) => {
   socket.on("send-message", ({ fromId, toId, text }) => {
     const toUser = userStore.getUserById(toId);
     const fromUser = userStore.getUserById(fromId);
-    socket.to(toId).emit("get-message", { text, fromUser, toUser });
+    socket.to(toId).to(fromId).emit("get-message", { text, fromUser, toUser });
   });
   socket.on("disconnect", () => {
-    console.log(`A user has been left.`);
     userStore.removeUser(socket.id);
+    console.log(`A user has been left.`);
+    console.log("user connected: " + userStore.getAllUser().length);
     io.emit("getUsers", userStore.getAllUser());
   });
 });

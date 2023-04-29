@@ -6,6 +6,7 @@ function FriendList({ friends, onlineFriends, currentFriendId, changeFriend }) {
     <ul className="flex flex-col gap-2">
       {friends.map((friend) => (
         <FriendItem
+          key={friend.id}
           username={friend.username}
           online={onlineFriends.some((of) => of.id === friend.id)}
           onchat={friend.id === currentFriendId}

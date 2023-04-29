@@ -7,6 +7,7 @@ function RequiredAuth() {
   if (!user) {
     return <Navigate to={"/login"} replace state={{}}></Navigate>;
   }
+
   return <Outlet></Outlet>;
 }
 
