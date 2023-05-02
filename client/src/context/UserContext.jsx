@@ -1,6 +1,13 @@
-import React, { useEffect, useState, createContext, useContext } from "react";
+import React, {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useRef,
+} from "react";
 import { getUserById, getUserIdByToken } from "../api";
 import { useCookies } from "react-cookie";
+
 export const UserContext = createContext();
 
 export default function UserProvider({ children }) {
@@ -15,6 +22,7 @@ export default function UserProvider({ children }) {
         const response = await getUserIdByToken(token);
         const userId = response.data.userId;
         const res = await getUserById(userId);
+
         setUser(res.data);
         setReady(true);
       } catch (error) {

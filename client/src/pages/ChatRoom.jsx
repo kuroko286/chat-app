@@ -3,9 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import ChatContainer from "../components/ChatContainer";
 import { UserContext } from "../context/UserContext";
 import { useCookies } from "react-cookie";
-import socketIOClient from "socket.io-client";
 import { getAllMessage, sendMessage } from "../api";
 import FriendList from "../components/FriendList";
+import socket from "../../socket";
 
 function ChatRoom() {
   const navigate = useNavigate();
@@ -15,8 +15,6 @@ function ChatRoom() {
   const [dialog, setDialog] = useState([]);
   const [message, setMessage] = useState("");
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
-  const socketRef = useRef();
-
   useEffect(() => {
     setCurrentFriendId(user.friends[0].id);
   }, []);
@@ -36,16 +34,17 @@ function ChatRoom() {
         .catch((err) => console.log(err));
   }, [currentFriendId]);
   useEffect(() => {
-    socketRef.current = socketIOClient.connect("http://localhost:8000");
-    socketRef.current.emit("user-connected", user);
-    socketRef.current.on("getUsers", (users) => {
+    socket.connect();
+    socket.emit("user-connected", user);
+    socket.on("getUsers", (users) => {
       setOnlineFriends(
         user.friends.filter((f) => users.some((u) => u.userId === f.id))
       );
     });
 
-    socketRef.current.on("get-message", ({ text, fromUser, toUser }) => {
-      if (currentFriendId === fromUser.userId) {
+    socket.on("get-message", ({ text, fromUser, toId }) => {
+      if (currentFriendId === fromUser.userId || currentFriendId === toId) {
+        console.log("Sended");
         setDialog((dialog) => [
           ...dialog,
           {
@@ -56,11 +55,10 @@ function ChatRoom() {
         ]);
       }
     });
-
     return () => {
-      socketRef.current.off("getUsers");
-      socketRef.current.off("get-message");
-      socketRef.current.disconnect();
+      socket.emit("disconn");
+      socket.off("get-message");
+      socket.off("getUsers");
     };
   }, []);
 
@@ -83,7 +81,7 @@ function ChatRoom() {
     ]);
     sendMessage(user._id, currentFriendId, message);
     setMessage("");
-    socketRef.current.emit("send-message", {
+    socket.emit("send-message", {
       fromId: user._id,
       toId: currentFriendId,
       text: message,
@@ -101,7 +99,7 @@ function ChatRoom() {
         <Link to={"/friends"}>Add friend now</Link>
       </button>
       <h1 className="text-3xl font-bold underline italic">
-        Hello {user?.username || "Guest"}!
+        Hello world {user?.username || "Guest"}!
       </h1>
       {user.friends.length === 0 ? (
         <h4>You have no friend @_@</h4>

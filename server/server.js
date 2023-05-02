@@ -26,11 +26,20 @@ io.on("connection", (socket) => {
   socket.on("send-message", ({ fromId, toId, text }) => {
     const toUser = userStore.getUserById(toId);
     const fromUser = userStore.getUserById(fromId);
-    socket.to(toId).to(fromId).emit("get-message", { text, fromUser, toUser });
+    console.log("Send mess");
+    socket.to(toId).to(fromId).emit("get-message", { text, fromUser, toId });
   });
-  socket.on("disconnect", () => {
+  socket.on("disconnect", (reason) => {
+    console.log(reason);
     userStore.removeUser(socket.id);
-    console.log(`A user has been left.`);
+    console.log(`A user has been left on disconnect.`);
+    console.log("user connected: " + userStore.getAllUser().length);
+    io.emit("getUsers", userStore.getAllUser());
+  });
+  socket.on("disconn", () => {
+    userStore.removeUser(socket.id);
+
+    console.log(`A user has been left on disconn.`);
     console.log("user connected: " + userStore.getAllUser().length);
     io.emit("getUsers", userStore.getAllUser());
   });
