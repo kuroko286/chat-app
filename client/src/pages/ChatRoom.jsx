@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useReducer,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ChatContainer from "../components/ChatContainer";
 import { UserContext } from "../context/UserContext";
@@ -6,33 +12,35 @@ import { useCookies } from "react-cookie";
 import { getAllMessage, sendMessage } from "../api";
 import FriendList from "../components/FriendList";
 import socket from "../../socket";
+import ChatInput from "../components/ChatInput";
+import messageReducer from "../reducer/messageReducer";
 
 function ChatRoom() {
   const navigate = useNavigate();
   const [user, setUser] = useContext(UserContext);
   const [onlineFriends, setOnlineFriends] = useState([]);
-  const [currentFriendId, setCurrentFriendId] = useState(user.friends[0].id);
-  const [dialog, setDialog] = useState([]);
-  const [message, setMessage] = useState("");
+  const [currentFriend, setCurrentFriend] = useState(user.friends[0]);
+  const [dialog, dispatch] = useReducer(messageReducer, []);
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
+  const [isTyping, setIsTyping] = useState(false); // notice other user are typing.
+
   useEffect(() => {
-    setCurrentFriendId(user.friends[0].id);
-  }, []);
-  useEffect(() => {
-    currentFriendId &&
-      getAllMessage(user._id, currentFriendId)
+    currentFriend &&
+      getAllMessage(user._id, currentFriend.id)
         .then((res) =>
-          res.data.map((mess) => {
-            return {
-              message: mess.text,
-              fromId: mess.from,
-              fromUsername: mess.fromUsername,
-            };
+          dispatch({
+            type: "LOAD_MESSAGE_SUCCESS",
+            payload: res.data,
           })
         )
-        .then((res) => setDialog(res))
-        .catch((err) => console.log(err));
-  }, [currentFriendId]);
+        .catch((err) =>
+          dispatch({
+            type: "LOAD_MESSAGE_ERROR",
+            payload: err,
+          })
+        );
+  }, [currentFriend]);
+
   useEffect(() => {
     socket.connect();
     socket.emit("user-connected", user);
@@ -43,50 +51,34 @@ function ChatRoom() {
     });
 
     socket.on("get-message", ({ text, fromUser, toId }) => {
-      if (currentFriendId === fromUser.userId || currentFriendId === toId) {
-        console.log("Sended");
-        setDialog((dialog) => [
-          ...dialog,
-          {
-            fromId: fromUser.userId,
-            message: text,
-            fromUsername: fromUser.username,
-          },
-        ]);
+      if (currentFriend.id === fromUser.userId || currentFriend.id === toId) {
+        dispatch({
+          type: "SEND_MESSAGE",
+          payload: { message: text, fromUser },
+        });
       }
     });
+    socket.on("typing", () => {
+      setIsTyping(true);
+    });
+
+    socket.on("stop typing", () => {
+      setIsTyping(false);
+    });
+
     return () => {
       socket.emit("disconn");
       socket.off("get-message");
       socket.off("getUsers");
+      socket.off("typing");
+      socket.off("stop typing");
     };
   }, []);
 
-  const handleChange = (event) => {
-    setMessage(event.target.value);
-  };
-  const changeCurrentFriend = (id) => {
-    setCurrentFriendId(id);
+  const changeCurrentFriend = (friend) => {
+    setCurrentFriend(friend);
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setDialog([
-      ...dialog,
-      {
-        message: message,
-        fromId: user._id,
-        fromUsername: user.username,
-      },
-    ]);
-    sendMessage(user._id, currentFriendId, message);
-    setMessage("");
-    socket.emit("send-message", {
-      fromId: user._id,
-      toId: currentFriendId,
-      text: message,
-    });
-  };
   const handleLogout = () => {
     setUser(null);
     removeCookie("token");
@@ -111,30 +103,20 @@ function ChatRoom() {
               <FriendList
                 friends={user.friends}
                 onlineFriends={onlineFriends}
-                currentFriendId={currentFriendId}
+                currentFriendId={currentFriend.id}
                 changeFriend={changeCurrentFriend}
               ></FriendList>
             </div>
-            <ChatContainer dialog={dialog}></ChatContainer>
+            <ChatContainer
+              dialog={dialog}
+              isTyping={isTyping}
+              fromUser={currentFriend}
+            ></ChatContainer>
           </div>
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col
-       gap-8 justify-start items-center w-full"
-          >
-            <div className="flex md:gap-6 w-full ">
-              <input
-                type="text"
-                placeholder="Enter something..."
-                onChange={handleChange}
-                value={message}
-                className="grow outline-none rounded-3xl px-4 py-2 border-2"
-              ></input>
-              <button onClick={handleSubmit} className="rounded-3xl">
-                Send
-              </button>
-            </div>
-          </form>
+          <ChatInput
+            currentFriend={currentFriend}
+            dispatch={dispatch}
+          ></ChatInput>
         </>
       )}
 

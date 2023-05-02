@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useContext } from "react";
 import MessageLine from "./MessageLine";
 import { v4 as uuidv4 } from "uuid";
 
-function ChatContainer({ dialog }) {
+function ChatContainer({ dialog, isTyping, fromUser }) {
   const bottomRef = useRef();
 
   useEffect(() => {
@@ -20,6 +20,7 @@ function ChatContainer({ dialog }) {
           ></MessageLine>
         </li>
       ))}
+      {isTyping && <small>{fromUser.username} is typing...</small>}
       <div ref={bottomRef} className="end-message"></div>
     </ul>
   );

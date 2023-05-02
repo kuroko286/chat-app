@@ -26,9 +26,18 @@ io.on("connection", (socket) => {
   socket.on("send-message", ({ fromId, toId, text }) => {
     const toUser = userStore.getUserById(toId);
     const fromUser = userStore.getUserById(fromId);
-    console.log("Send mess");
     socket.to(toId).to(fromId).emit("get-message", { text, fromUser, toId });
   });
+
+  socket.on("user typing", ({ toId }) => {
+    console.log("user typing");
+    socket.to(toId).emit("typing");
+  });
+  socket.on("user stop typing", ({ toId }) => {
+    console.log("user stop typing");
+    socket.to(toId).emit("stop typing");
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(reason);
     userStore.removeUser(socket.id);

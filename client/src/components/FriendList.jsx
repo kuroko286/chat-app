@@ -10,7 +10,7 @@ function FriendList({ friends, onlineFriends, currentFriendId, changeFriend }) {
           username={friend.username}
           online={onlineFriends.some((of) => of.id === friend.id)}
           onchat={friend.id === currentFriendId}
-          handleClick={() => changeFriend(friend.id)}
+          handleClick={() => changeFriend(friend)}
         ></FriendItem>
       ))}
     </ul>
